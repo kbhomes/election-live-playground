@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Sajid Anwar's Election Live Playground (based on The Economist forecast)</title>
+        <link rel="stylesheet" href="index.css">
+        <script src="https://unpkg.com/mathjs@7.6.0/dist/math.min.js"></script>
+        <script src="https://mlweb.loria.fr/lalolib-noglpk-module.min.js"></script>
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="https://unpkg.com/topojson-client@3"></script>
+    </head>
+    <body>
+        <div id="container">
+            <div id="tooltip">
+                <div><strong id="state"></strong></div>
+                <div>Biden: <span id="biden-probability"></span></div>
+                <div>Trump: <span id="trump-probability"></span></div>
+            </div>
+            <div id="header">
+                <h1>Election Playground <small>by <a href="http://github.com/kbhomes">Sajid Anwar</a></small></h1>
+                <p>Based on the US election forecast from <a href="https://projects.economist.com/us-2020-forecast/president">The Economist</a>.
+                    Adapted from G. Elliott Morris' <a href="https://gist.github.com/elliottmorris/c70fd4d32049c9986a45e2dfc07fb4f0">election night live model</a>.
+                </p>
+            </div>
+            <svg id="map"></svg>
+            <div id="information">
+                <table>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th>Chance of winning the electoral college</th>
+                            <th>Expected electoral college votes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="candidate democratic biden">
+                            <td>
+                                <img class="picture" src="https://cdn.economistdatateam.com/us-2020-forecast/static/biden-head.png" />
+                            </td>
+                            <td>
+                                <div class="name">Joe Biden</div>
+                                <div class="party">Democrat</div>
+                            </td>
+                            <td>
+                                <div class="probability-win"></div>
+                            </td>
+                            <td>
+                                <div class="expected-ev"></div>
+                            </td>
+                        </tr>
+                        <tr class="candidate republican trump">
+                            <td>
+                                <img class="picture" src="https://cdn.economistdatateam.com/us-2020-forecast/static/trump-head.png" />
+                            </td>
+                            <td>
+                                <div class="name">Donald Trump</div>
+                                <div class="party">Republican</div>
+                            </td>
+                            <td>
+                                <div class="probability-win"></div>
+                            </td>
+                            <td>
+                                <div class="expected-ev"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="states">
+                
+            </div>
+        </div>
+        <script src="index.js"></script>
+    </body>
+</html>
