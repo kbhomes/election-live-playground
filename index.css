@@ -1,0 +1,126 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: white;
+    width: 100%; 
+    display: flex;
+    justify-content: center;
+}
+
+h1 small {
+    font-weight: normal;
+    font-size: 12pt;
+    color: #555;
+}
+
+#tooltip {
+    width: 100px;
+    border: 1px solid #ccc;
+    background: white;
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    padding: 25px;
+    text-align: center;
+    display: none;
+    pointer-events: none;
+    opacity: 0.95;
+}
+
+#container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 90%;
+    max-width: 900px;
+}
+
+#map {
+    min-height: 400px;
+    max-height: 600px;
+    padding: 20px 0;
+    border: 1px solid black;
+    border-width: 1px 0;
+}
+
+#map .map-state {
+    cursor: pointer;
+}
+
+#information table {
+    border-collapse: collapse;
+}
+
+#information th {
+    font-size: 10pt;
+    border-bottom: 1px solid black;
+    padding: 20px 60px;
+}
+
+#information .candidate td {
+    border-bottom: 1px solid #ccc;
+    padding: 20px;
+}
+
+#information .candidate:last-of-type td {
+    border-color: black;
+}
+
+#information .picture {
+    max-height: 80px;
+}
+
+#information .name {
+    font-size: 18pt;
+    color: black;
+}
+
+#information .democratic { color: #616cba; }
+#information .republican { color: #d8626b; }
+
+
+#information .probability-win,
+#information .expected-ev {
+    text-align: center;
+    font-size: 18pt;
+}
+
+#information .winner .probability-win,
+#information .winner .expected-ev {
+    font-weight: bold;
+}
+
+#states {
+    margin-top: 20px;
+}
+
+#states .grid {
+    display: grid;
+    grid-gap: 30px 20px;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+#states .grid .state {
+    font-weight: bold;
+    padding: 5px 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+#states .toggle img {
+    max-height: 40px;
+    vertical-align: middle;
+}
+
+#states .toggle {
+    cursor: pointer;
+    opacity: 0.3;
+    transition: 0.5s all;
+}
+
+#states .toggle.active,
+#states .toggle.hover {
+    opacity: 1;
+}
