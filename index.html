@@ -17,11 +17,25 @@
                 <div>Biden: <span id="biden-probability"></span></div>
                 <div>Trump: <span id="trump-probability"></span></div>
             </div>
-            <div id="header">
-                <h1>Election Playground <small>by <a href="http://github.com/kbhomes">Sajid Anwar</a> (<a href="https://github.com/kbhomes/election-live-playground">source</a>)</small></h1>
-                <p>Based on the US election forecast from <a href="https://projects.economist.com/us-2020-forecast/president">The Economist</a>.
-                    Adapted from G. Elliott Morris' <a href="https://gist.github.com/elliottmorris/c70fd4d32049c9986a45e2dfc07fb4f0">election night live model</a>.
-                </p>
+            <div id="header" class="full-bleed">
+                <div class="inner double-wide">
+                    <div class="title">
+                        <h1>Election Playground</h1>
+                        <small>by <a href="http://github.com/kbhomes">Sajid Anwar</a> (<a href="https://github.com/kbhomes/election-live-playground">source</a>)</small>
+                        <p>Based on the US election forecast from <a href="https://projects.economist.com/us-2020-forecast/president">The Economist</a>.
+                            Adapted from G. Elliott Morris' <a href="https://gist.github.com/elliottmorris/c70fd4d32049c9986a45e2dfc07fb4f0">election night live model</a>.
+                        </p>
+                    </div>
+                    <div class="controls">
+                        <div class="inputs">
+                            <label>Samples to draw: <input id="config-samples" type="number" value="10000" min="10000" max="100000" step="1000"></label>
+                            <label>Auto-run simulation: <input id="config-autorun" type="checkbox" checked></label>
+                            <button id="action-run"><ion-icon name="play-circle"></ion-icon> Run</button>
+                            <button id="action-reset"><ion-icon name="close-circle"></ion-icon> Reset Picks</button>
+                            <a id="action-share" href=""><ion-icon name="link"></ion-icon> Permalink</a>
+                        </div>
+                    </div>
+                </div>
             </div>
             <svg id="map"></svg>
             <div id="information">
@@ -73,5 +87,6 @@
             </div>
         </div>
         <script src="index.js"></script>
+        <script src="https://unpkg.com/ionicons@5.2.3/dist/ionicons.js"></script>
     </body>
 </html>

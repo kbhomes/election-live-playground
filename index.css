@@ -2,14 +2,35 @@ body {
     font-family: Arial, Helvetica, sans-serif;
     background: white;
     width: 100%; 
+    margin: 0;
     display: flex;
     justify-content: center;
+    margin-bottom: 30px;
 }
 
-h1 small {
-    font-weight: normal;
-    font-size: 12pt;
-    color: #555;
+.full-bleed {
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+}
+
+#container,
+.full-bleed .center {
+    max-width: 900px;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.full-bleed .double-wide {
+    max-width: 1800px;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h1 {
+    margin: 0;
 }
 
 #tooltip {
@@ -17,7 +38,7 @@ h1 small {
     border: 1px solid #ccc;
     background: white;
     position: fixed;
-    z-index: 10;
+    z-index: 1000;
     top: 0;
     left: 0;
     padding: 25px;
@@ -31,20 +52,88 @@ h1 small {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    width: 90%;
-    max-width: 900px;
+}
+
+#header {
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid black;
+    position: sticky;
+    top: 0;
+    background: #fefefe;
+    z-index: 100;
+    font-size: 10pt;
+}
+
+#header h1 {
+    display: inline-block;
+    margin: 0;
+}
+
+#header .inner {
+    display: flex;
+}
+
+#header small {
+    font-weight: normal;
+    font-size: 10pt;
+    color: #555;
+    white-space: nowrap;
+}
+
+#header p {
+    margin-bottom: 0;
+}
+
+#header .title {
+    padding-right: 10px;
+    flex: 1;
+}
+
+#header .controls {
+    background: #f8f8f8;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#header .controls .inputs {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    column-gap: 20px;
+}
+
+#header .controls .inputs label,
+#header .controls .inputs input {
+    vertical-align: middle;
+}
+
+#header .controls .inputs button,
+#header .controls .inputs ion-icon {
+    vertical-align: text-top;
+}
+
+#header .controls .inputs a {
+    border-bottom: 1px solid;
+    text-decoration: none;
 }
 
 #map {
     min-height: 400px;
     max-height: 600px;
     padding: 20px 0;
-    border: 1px solid black;
-    border-width: 1px 0;
+    border-bottom: 1px solid black;
 }
 
 #map .map-state {
     cursor: pointer;
+}
+
+#map .map-state-text {
+    text-anchor: middle;
 }
 
 #information table {
@@ -54,7 +143,7 @@ h1 small {
 #information th {
     font-size: 10pt;
     border-bottom: 1px solid black;
-    padding: 20px 60px;
+    padding: 20px 40px;
 }
 
 #information .candidate td {
@@ -91,7 +180,7 @@ h1 small {
 }
 
 #states {
-    margin-top: 20px;
+    margin-top: 30px;
 }
 
 #states .grid {
@@ -107,6 +196,20 @@ h1 small {
     flex-direction: row;
     justify-content: space-evenly;
     align-items: center;
+    border: 1px dashed gray;
+    border-radius: 15px;
+}
+
+#states .grid .state.biden {
+    box-shadow: 0px 0px 0px 4px #717cba;
+    border-color:#717cba;
+    border-style: solid;
+}
+
+#states .grid .state.trump {
+    box-shadow: 0px 0px 0px 4px #f6626b;
+    border-color: #f6626b;
+    border-style: solid;
 }
 
 #states .toggle img {

@@ -7,6 +7,9 @@ const Columns = {
     STATES_START: { name: undefined, index: 3 },
 };
 
+const DEFAULT_SAMPLES = 10000;
+const DEFAULT_AUTORUN = true;
+
 const RAW_STATE_EVS = {"AL":9,"AK":3,"AZ":11,"AR":6,"CA":55,"CO":9,"CT":7,"DC":3,"DE":3,"FL":29,"GA":16,"HI":4,"ID":4,"IL":20,"IN":11,"IA":6,"KS":6,"KY":8,"LA":8,"ME":2,"ME1":1,"ME2":1,"MD":10,"MA":11,"MI":16,"MN":10,"MS":6,"MO":10,"MT":3,"NE":2,"NE1":1,"NE2":1,"NE3":1,"NV":6,"NH":4,"NJ":14,"NM":5,"NY":29,"NC":15,"ND":3,"OH":18,"OK":7,"OR":7,"PA":20,"RI":4,"SC":9,"SD":3,"TN":11,"TX":38,"UT":6,"VT":3,"VA":13,"WA":12,"WV":5,"WI":10,"WY":3};
 const RAW_STATE_NAME_FROM_FULL = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","District of Columbia":"DC","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY"};
 const RAW_ME_NE_LEANS = {
@@ -29,6 +32,7 @@ let originalStatePercents = [];
 let resampleMu;
 let resampleSigma;
 let resampleDistribution;
+let resampled;
 
 // Visualization constants
 const stateLikelihoodScale = d3.scaleThreshold()
@@ -36,12 +40,16 @@ const stateLikelihoodScale = d3.scaleThreshold()
     .range(['#F8626B', '#F8ABA8', '#FFDEDC', '#EEE', '#CCD7F3', '#9BACD8', '#717CBA']);
 
 // User-configurable data for the simulations
-let resampled = {"constraints":{"biden":[],"trump":[]},"samples":{"drawn":100000,"accepted":100000},"forecast":{"bidenWinsProbability":0.95719,"bidenExpectedElectoralVotes":347,"bidenStatesProbability":{"AK":0.044410000000000005,"AL":0,"AR":0,"AZ":0.72552,"CA":1,"CO":0.9985800000000001,"CT":1,"DC":1,"DE":1,"FL":0.7756900000000001,"GA":0.55723,"HI":1,"IA":0.40397000000000005,"ID":0,"IL":0.9999700000000001,"IN":0.00045000000000000004,"KS":0.0017400000000000002,"KY":0,"LA":0.00043000000000000004,"MA":1,"MD":1,"ME":0.9989500000000001,"MI":0.9752000000000001,"MN":0.9866300000000001,"MO":0.013110000000000002,"MS":0.0034700000000000004,"MT":0.01102,"NC":0.6655800000000001,"ND":0,"NE":0.0002,"NH":0.9783000000000001,"NJ":1,"NM":0.9969100000000001,"NV":0.9406700000000001,"NY":1,"OH":0.38348000000000004,"OK":0,"OR":0.99999,"PA":0.9405000000000001,"RI":1,"SC":0.021970000000000003,"SD":0.000030000000000000004,"TN":0.00006000000000000001,"TX":0.27924000000000004,"UT":0.00005,"VA":0.9966900000000001,"VT":1,"WA":1,"WI":0.9717500000000001,"WV":0,"WY":0,"ME1":1,"ME2":0.5614600000000001,"NE1":0.007840000000000001,"NE2":0.8488600000000001,"NE3":0}}};
+let configSamples = 10000;
+let configAutorun = true;
 let forceBidenStates = [];
 let forceTrumpStates = [];
 
 // Immediately start!
 (async function () {
+    // Read information from the URL
+    parseUrlParameters();
+
     // Precompute the resampling distribution
     await initializeDistribution();
 
@@ -53,7 +61,63 @@ let forceTrumpStates = [];
 
     // Update the interactive
     await updateInteractive();
+
+    // Update the URL
+    updateUrlParameters();
 })();
+
+function parseUrlParameters() {
+    if (!location.search)
+        return;
+
+    const params = {};
+    location.search.substr(1)
+        .split('&')
+        .map(kv => kv.split('='))
+        .forEach(pair => params[pair[0]] = pair[1]);
+
+    const samples = parseInt(params.samples);
+    if (samples && samples >= 10000 && samples <= 100000) {
+        configSamples = samples;
+        document.querySelector('#config-samples').value = configSamples;
+    }
+
+    const notAutorun = params.autorun === 'false';
+    if (notAutorun) {
+        configAutorun = false;
+        document.querySelector('#config-autorun').checked = false;
+    }
+
+    if (params.biden) {
+        forceBidenStates = params.biden.split(',');
+    }
+
+    if (params.trump) {
+        forceTrumpStates = params.trump.split(',');
+    }
+}
+
+function updateUrlParameters() {
+    const params = [];
+
+    if (forceBidenStates.length) {
+        params.push(`biden=${forceBidenStates.join(',')}`);
+    }
+
+    if (forceTrumpStates.length) {
+        params.push(`trump=${forceTrumpStates.join(',')}`);
+    }
+
+    if (configSamples !== DEFAULT_SAMPLES) {
+        params.push(`samples=${configSamples}`);
+    }
+
+    if (configAutorun !== DEFAULT_AUTORUN) {
+        params.push(`autorun=${configAutorun}`);
+    }
+
+    history.replaceState(null, null, '?' + params.join('&'));
+}
 
 async function initializeInteractive() {
     const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3.0.0/states-albers-10m.json');
@@ -64,61 +128,17 @@ async function initializeInteractive() {
 
     const tooltip = d3.select('#tooltip');
 
-    svg.append("g")
-        .attr("fill", "#ccc")
-        .selectAll("path")
-            .data(topojson.feature(us, us.objects.states).features)
-            .enter().append("path")
-                .attr('class', 'map-state')
-                .attr("d", path)
-                .attr('stroke', 'white')
-                .attr('stroke-linejoin', 'round')
-                .on("click", (event, d) => {
-                    const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
-
-                    // Resample until there is a valid forecast
-                    let attempt = 0;
-                    while (attempt < 3) {
-                        attempt++;
-
-                        try {
-                            toggleConstraintState(stateName);
-                            updateForecast();
-                            break;
-                        } catch (error) {
-                            alert(error.message);
-                        }
-                    }
-                    
-                    // Update the interactive
-                    updateInteractive();
-                })
-                .on('mouseover', (event, d) => {
-                    const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
-                    const stateProbability = resampled.forecast.bidenStatesProbability[stateName];
-                    tooltip
-                        .style('display', 'block')
-                        .style('top', `${event.clientY - 150}px`)
-                        .style('left', `${event.clientX - 75}px`);
-                    tooltip.select('#state').text(stateName);
-                    tooltip.select('#biden-probability').text(math.round(stateProbability * 100, 1) + '%');
-                    tooltip.select('#trump-probability').text(math.round((1 - stateProbability) * 100, 1) + '%');
-                })
-                .on('mousemove', (event, d) => {
-                    const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
-                    const stateProbability = resampled.forecast.bidenStatesProbability[stateName];
-                    tooltip
-                        .style('display', 'block')
-                        .style('top', `${event.clientY - 150}px`)
-                        .style('left', `${event.clientX - 75}px`);
-                    tooltip.select('#state').text(stateName);
-                    tooltip.select('#biden-probability').text(math.round(stateProbability * 100, 1) + '%');
-                    tooltip.select('#trump-probability').text(math.round((1 - stateProbability) * 100, 1) + '%');
-                })
-                .on('mouseleave', (event, d) => {
-                    const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
-                    tooltip.style('display', 'none');
-                });
+    // Create a cross-hatch pattern for picked states
+    svg.append('defs')
+        .append('pattern')
+            .attr('id', 'diagonalHatch')
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('width', 8)
+            .attr('height', 8)
+        .append('path')
+            .attr('d', 'M-1,-1 l14,14')
+            .attr('stroke', '#000000')
+            .attr('stroke-width', 1);
 
     // Interior outline of all states and the country
     svg.append("path")
@@ -129,68 +149,102 @@ async function initializeInteractive() {
         .attr("pointer-events", "none")
         .attr("d", path);
 
+    // Map shapes for each state
+    const statesShape = svg.append("g")
+        .attr("fill", "#ccc")
+        .selectAll("path")
+            .data(topojson.feature(us, us.objects.states).features)
+            .enter();
+            
+    // State shapes
+    statesShape.append("path")
+        .attr('class', 'map-state')
+        .attr('d', path)
+        .attr('stroke', 'white')
+        .attr('stroke-linejoin', 'round')
+        .on("click", (event, d) => {
+            const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
+            attemptForecastAndInteractiveUpdate(() => toggleConstraintState(stateName));
+        })
+        .on('mouseover', (event, d) => {
+            const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
+            const stateProbability = resampled.forecast.bidenStatesProbability[stateName];
+            tooltip
+                .style('display', 'block')
+                .style('top', `${event.clientY - 150}px`)
+                .style('left', `${event.clientX - 75}px`);
+            tooltip.select('#state').text(stateName);
+            tooltip.select('#biden-probability').text(math.round(stateProbability * 100, 1) + '%');
+            tooltip.select('#trump-probability').text(math.round((1 - stateProbability) * 100, 1) + '%');
+        })
+        .on('mousemove', (event, d) => {
+            const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
+            const stateProbability = resampled.forecast.bidenStatesProbability[stateName];
+            tooltip
+                .style('display', 'block')
+                .style('top', `${event.clientY - 150}px`)
+                .style('left', `${event.clientX - 75}px`);
+            tooltip.select('#state').text(stateName);
+            tooltip.select('#biden-probability').text(math.round(stateProbability * 100, 1) + '%');
+            tooltip.select('#trump-probability').text(math.round((1 - stateProbability) * 100, 1) + '%');
+        })
+        .on('mouseleave', (event, d) => {
+            tooltip.style('display', 'none');
+        });
+
+    // Outlines for picked states
+    statesShape.append('path')
+        .attr('class', 'map-state-outline')
+        .attr('d', path)
+        .attr('pointer-events', 'none')
+        .attr('fill', 'none')
+        .attr('stroke', 'none')
+        .attr('stroke-width', 2)
+        .attr('stroke-linejoin', 'round')
+
     // Create the list of states
-    const states = d3.select('#states')
+    const statesList = d3.select('#states')
         .append('div')
             .classed('grid', true)
         .selectAll('.state')
-        .data(stateNames)
+        .data(stateNames.slice().sort())
         .enter()
             .append('div')
             .classed('state', true)
             .classed('biden', d => forceBidenStates.includes(d))
-            .classed('trump', d => forceBidenStates.includes(d))
+            .classed('trump', d => forceTrumpStates.includes(d))
             .text(d => d);
 
     // Add toggles for each of the candidates
-    states.append('div')
+    statesList.append('div')
         .classed('toggle', true)
         .classed('toggle-biden', true)
-        .on('click', (event, d) => {
-            // Resample until there is a valid forecast
-            let attempt = 0;
-            while (attempt < 3) {
-                attempt++;
-
-                try {
-                    forceConstraintState(d, 'biden');
-                    updateForecast();
-                    break;
-                } catch (error) {
-                    alert(error.message);
-                }
-            }
-                    
-            // Update the interactive
-            updateInteractive();
-        })
+        .on('click', (event, d) => attemptForecastAndInteractiveUpdate(() => forceConstraintState(d, 'biden')))
         .append('img')
             .attr('src', 'https://cdn.economistdatateam.com/us-2020-forecast/static/biden-head.png');
-
     
-    states.append('div')
+    statesList.append('div')
         .classed('toggle', true)
         .classed('toggle-trump', true)
-        .on('click', (event, d) => {
-            // Resample until there is a valid forecast
-            let attempt = 0;
-            while (attempt < 3) {
-                attempt++;
-
-                try {
-                    forceConstraintState(d, 'trump');
-                    updateForecast();
-                    break;
-                } catch (error) {
-                    alert(error.message);
-                }
-            }
-                    
-            // Update the interactive
-            updateInteractive();
-        })
+        .on('click', (event, d) => attemptForecastAndInteractiveUpdate(() => forceConstraintState(d, 'trump')))
         .append('img')
             .attr('src', 'https://cdn.economistdatateam.com/us-2020-forecast/static/trump-head.png');
+
+    // Handle configuration changes
+    d3.select('#config-samples').on('change', event => {
+        configSamples = parseInt(event.target.value);
+        updateUrlParameters();
+    });
+    d3.select('#config-autorun').on('change', event => {
+        configAutorun = event.target.checked;
+        updateUrlParameters();
+    });
+    d3.select('#action-run').on('click', () => attemptForecastAndInteractiveUpdate(null, true));
+    d3.select('#action-reset').on('click', () => {
+        forceBidenStates = [];
+        forceTrumpStates = [];
+        attemptForecastAndInteractiveUpdate(null, true);
+    });
 }
 
 async function updateInteractive() {
@@ -213,6 +267,21 @@ async function updateInteractive() {
             return stateLikelihoodScale(resampled.forecast.bidenStatesProbability[stateName]);
         });
 
+
+    d3.select('#map')
+        .selectAll('.map-state-outline')
+        .transition()
+            .duration(300)
+        .attr('fill', d => {
+            const stateName = RAW_STATE_NAME_FROM_FULL[d.properties.name];
+
+            if (forceBidenStates.includes(stateName) || forceTrumpStates.includes(stateName)) {
+                return 'url(#diagonalHatch)';
+            } else {
+                return 'none';
+            }
+        });
+
     const bidenInfo = d3.select('#information .biden');
     bidenInfo.classed('winner', resampled.forecast.bidenWinsProbability >= 0.5);
     bidenInfo.select('.probability-win').text(math.round(resampled.forecast.bidenWinsProbability * 100, 1) + '%');
@@ -223,11 +292,41 @@ async function updateInteractive() {
     trumpInfo.select('.probability-win').text(math.round((1 - resampled.forecast.bidenWinsProbability) * 100, 1) + '%');
     trumpInfo.select('.expected-ev').text(math.round(538 - resampled.forecast.bidenExpectedElectoralVotes));
 
+    
+    d3.selectAll('#states .state')
+        .classed('biden', d => forceBidenStates.includes(d))
+        .classed('trump', d => forceTrumpStates.includes(d));
+
     d3.selectAll('.toggle-biden')
         .classed('active', d => forceBidenStates.includes(d));
 
     d3.selectAll('.toggle-trump')
         .classed('active', d => forceTrumpStates.includes(d))
+}
+
+function attemptForecastAndInteractiveUpdate(prepFunction, force = false, maxAttempts = 3) {
+    // Resample until there is a valid forecast
+    let attempt = 0;
+    while (attempt++ < maxAttempts) {
+        try {
+            if (prepFunction)
+                prepFunction();
+
+            // Only update the forecast if autorun is enabled disabled or this is a manual run
+            if (configAutorun || force)
+                updateForecast();
+
+            break;
+        } catch (error) {
+            console.log(error.message);
+        }
+    }
+            
+    // Update the interactive
+    updateInteractive();
+
+    // Update the URL
+    updateUrlParameters();
 }
 
 function toggleConstraintState(stateName) {
@@ -332,7 +431,7 @@ function simulateDistrict(originalSimulation, stateName, districtNumber) {
 
 function updateForecast() {
     // Sample the multivariate normal distribution
-    const { samples, samplesDrawn, samplesAccepted } = drawSamples(resampleDistribution, 10000, 100, forceBidenStates || [], forceTrumpStates || []);
+    const { samples, samplesDrawn, samplesAccepted } = drawSamples(resampleDistribution, configSamples, 100, forceBidenStates || [], forceTrumpStates || []);
 
     let sampledEvs = L.isGreaterOrEqual(samples, 0.5);
     for (let row = 0; row < sampledEvs.length; row++) {
